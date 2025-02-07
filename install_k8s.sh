@@ -1,7 +1,40 @@
 # =====   Prepare    =====
 # ----- install cri-dockerd -----
-wget https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.11/cri-dockerd_0.3.11.3-0.ubuntu-jammy_amd64.deb
-sudo dpkg -i cri-dockerd_0.3.11.3-0.ubuntu-jammy_amd64.deb
+#!/bin/bash
+
+FILE="cri-dockerd_0.3.11.3-0.ubuntu-jammy_amd64.deb"
+URL="https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.11/cri-dockerd_0.3.11.3-0.ubuntu-jammy_amd64.deb"
+
+# Check if the file already exists
+if [ ! -f "$FILE" ]; then
+  echo "Downloading $FILE..."
+  wget "$URL" -O "$FILE"
+  if [ $? -ne 0 ]; then
+    echo "Download failed!"
+    exit 1
+  fi
+else
+  echo "$FILE already exists. Skipping download."
+fi
+
+
+# Install the package (extract and configure)  #The correct way to install a .deb package
+sudo dpkg -i "$FILE"
+if [ $? -ne 0 ]; then
+    echo "Installation failed!"
+    exit 1
+fi
+
+
+# Check for the socket file after installation
+if [ -e "/var/run/cri-dockerd.sock" ]; then
+  echo "cri-dockerd.sock found. Removing $FILE..."
+  rm "$FILE"
+else
+  echo "Warning: cri-dockerd.sock not found after installation.  Please check your cri-dockerd installation and configuration."
+fi
+
+echo "Installation complete."
 
 # ----- disable swap -----
 sudo sed -i '/swap/s/^/#/' /etc/fstab
